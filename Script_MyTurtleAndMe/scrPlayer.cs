@@ -38,6 +38,23 @@ public class scrPlayer : MonoBehaviour
 
         //able to move unless instructed otherwise
         toMove = true;
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Collider2D inFront = getLookingAt();
+            if(inFront != null)
+            {
+                GameObject inFront_GO = inFront.gameObject;
+                string theTag = inFront_GO.tag;
+                switch (theTag)
+                {
+                    case "NPC_AceRabbit":
+                        scrNPC_AceBunny aceBun = inFront_GO.GetComponent<scrNPC_AceBunny>();
+                        aceBun.faceDirection(currentDir);
+                        aceBun.engageCommentary();
+                        break;
+                }
+            }
+        }
         #region Animation handler
         //Animation handler
         if (Input.GetKeyUp(KeyCode.RightArrow))
@@ -164,6 +181,29 @@ public class scrPlayer : MonoBehaviour
         return true;
     }
 
+
+    /*
+    * @param void
+    * @returns GameObject whatever is in front of player
+    * @desc Checks to see if there is a collider in front of player
+    * @status Untested
+    */
+    public Collider2D getLookingAt()
+    {
+        switch (currentDir)
+        {
+            case Direction.North:
+                return Physics2D.OverlapPoint(new Vector2(transform.position.x, transform.position.y + 1));
+            case Direction.East:
+                return Physics2D.OverlapPoint(new Vector2(transform.position.x + 1, transform.position.y));
+            case Direction.South:
+                return Physics2D.OverlapPoint(new Vector2(transform.position.x, transform.position.y - 1));
+            case Direction.West:
+                return Physics2D.OverlapPoint(new Vector2(transform.position.x - 1, transform.position.y));
+        }
+
+        return null;
+    }
 
 
     /*

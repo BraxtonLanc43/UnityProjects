@@ -2,16 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
 {
     //Consistent properties
     public Animator animator;
     public int count_Engaged;
-    public string commentary_First = "Hey newbie! My rabbit and I have been together since I was a kid. There's no better friends than us!";
-    public string commentary_After = "Wow you guys are a good pair. Stick together and you'll become the best of friends!";
+    private string commentary_First = "My Rabbit and I have been through everything together!";
+    private string commentary_After = "Wow you guys are a good pair. Stick together and you'll become the best of friends!";
+    public GameObject speechBub;
+    public GameObject prefab_SpeechBubble;
+    public GameObject speechBub_Active;
 
     //Class variables
+    public GameObject exclaPoint;
     public GameObject player_GO;
     public scrPlayer player;
     public GameObject turtle_GO;
@@ -34,6 +39,8 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
         count_Engaged = 0;
 
         //other
+        speechBub = prefab_SpeechBubble;
+        exclaPoint.SetActive(false);
         player_GO = GameObject.FindGameObjectWithTag("Player");
         player = player_GO.GetComponent<scrPlayer>();
         turtle_GO = GameObject.FindGameObjectWithTag("Turtle");
@@ -49,7 +56,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
     public void Update()
     {
         GetComponent<SpriteRenderer>().sortingOrder = Mathf.RoundToInt(transform.position.y * 100f) * -1;
-
+       
         //Update player coords
         updatePlayerCoords();
 
@@ -59,10 +66,10 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
             spotted();
             walkToPlayer(currentDir);
         }
-            
-        
+
+
     }
-    
+
 
     /*
     * @param Vector3 destination this transform is going to
@@ -76,7 +83,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
 
         //is rabbit currently north, south, east, or west of this character?
         Direction rabbitLocation = Direction.North; //default only
-        if(rabbit_GO.transform.position.x - transform.position.x > 0.5)
+        if (rabbit_GO.transform.position.x - transform.position.x > 0.5)
         {
             rabbitLocation = Direction.East;
         }
@@ -163,26 +170,26 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
     * @param void
     * @returns void
     * @desc Logic for controlling commentary for this NPC
-    * @status Not Complete
+    * @status Working
     * @interface scrI_NPC
     */
     public void engageCommentary()
     {
+        hasAlreadyWalkedToDestination = true;
         //Play commentary based on how many times they've been engaged
-        //increment # of times we've engaed this NPC        
-        count_Engaged++;
+        GameObject can = speechBub.transform.Find("Canvas").gameObject;
+        GameObject txt = can.transform.Find("Text").gameObject;
+        Text txt_Text = txt.GetComponent<Text>();
 
-        //based on whether it's the first time engaging or not the first, render dialog
-        if (count_Engaged == 1)
+        if (count_Engaged == 0)
         {
-            //Play original commentary
-            playFirstCommentary();
+            txt_Text.text = commentary_First;
         }
-        else if (count_Engaged > 1)
-        {
-            //Play other commentary
-            playAdditionalCommentary();
-        }
+        else
+            txt_Text.text = commentary_After;
+        count_Engaged++;
+        speechBub_Active = Instantiate(speechBub);
+        speechBub_Active.transform.position = transform.position + (Vector3.up * 2) + (Vector3.right);
     }
 
     /*
@@ -338,6 +345,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
                 faceWest();
                 break;
         }
+        rabbit.faceDirection(dirEngagerIsFacing);
     }
 
 
@@ -366,7 +374,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
                 }
                 break;
             case Direction.East:
-                if ((Mathf.Abs(playerY - gameObject.transform.position.y) < 0.5f) && (playerX - gameObject.transform.position.x) < sightDistance &&(playerX - gameObject.transform.position.x) > 0)
+                if ((Mathf.Abs(playerY - gameObject.transform.position.y) < 0.5f) && (playerX - gameObject.transform.position.x) < sightDistance && (playerX - gameObject.transform.position.x) > 0)
                 {
                     return true;
                 }
@@ -394,6 +402,8 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
     {
         //Flash an exclamation point above sprite's head or something
         player.lockedIn = true;
+        exclaPoint.SetActive(true);
+        rabbit.exclaPoint.SetActive(true);
     }
 
     /*
@@ -428,7 +438,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
                 break;
             case Direction.East:
                 toRunEast();
-                destination = new Vector3(Mathf.Round(playerX) -1, Mathf.Round(playerY), gameObject.transform.position.z);
+                destination = new Vector3(Mathf.Round(playerX) - 1, Mathf.Round(playerY), gameObject.transform.position.z);
                 StartCoroutine(Move(transform, destination));
                 rabbit.walkToSpot(getCompanionDestination(destination), currentDirection);
                 break;
@@ -440,7 +450,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
                 break;
         }
 
-        
+
 
     }
 
@@ -455,7 +465,7 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
         isMoving = true;
         Vector3 startPos = entity.position;
         t = 0;
-        
+
         while (t < 1f)
         {
             t += Time.deltaTime * walkSpeed;
@@ -481,7 +491,22 @@ public class scrNPC_AceBunny : MonoBehaviour, scrI_NPC
 
         isMoving = false;
         hasAlreadyWalkedToDestination = true;
+        exclaPoint.SetActive(false);
+        rabbit.exclaPoint.SetActive(false);
         forcePlayerLookAt();
+        GameObject can = speechBub.transform.Find("Canvas").gameObject;
+        GameObject txt = can.transform.Find("Text").gameObject;
+        Text txt_Text = txt.GetComponent<Text>();
+
+        if (count_Engaged == 0)
+        {
+            txt_Text.text = commentary_First;
+        }
+        else
+            txt_Text.text = commentary_After;
+        count_Engaged++;
+        speechBub_Active = Instantiate(speechBub);
+        speechBub_Active.transform.position = transform.position + (Vector3.up * 2) + (Vector3.right);
         yield return 0;
     }
 

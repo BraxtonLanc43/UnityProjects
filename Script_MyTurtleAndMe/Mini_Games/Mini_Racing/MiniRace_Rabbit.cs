@@ -1,101 +1,93 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class scrRabbit : MonoBehaviour, scrI_NPC {
+public class MiniRace_Rabbit : MonoBehaviour {
 
-    //Consistent properties
     public Animator animator;
-    public int count_Engaged;
-    public string commentary_First = "sniffy sniff";
-    public string commentary_After = "sniff....";
-
-    //Class variables
-    public GameObject exclaPoint;
-    public Direction currentDir;
-    public bool isMoving = false;
-    public float t;
-    public float walkSpeed = 1.0f;
-    public bool hasAlreadyWalkedToDestination = false;
-
+    public GameObject dirtPath;
+    public GameObject finishLine;
+    public float walkSpeed;
+    public bool reachFinish = false;
+    public bool turtleFinished = false;
+    public GameObject turtle;
+    public MiniRace_Turtle src_Turte;
+    public GameObject manager;
+    public MiniRace_Manager src_Manager;
 
     // Use this for initialization
-    void Start()
-    {
-        //Consistent properties
+    void Start () {
+        walkSpeed = 0.04f;
         animator = GetComponent<Animator>();
-        count_Engaged = 0;
+        spawnPosition();
+        faceEast();
+        src_Turte = turtle.GetComponent<MiniRace_Turtle>();
+        src_Manager = manager.GetComponent<MiniRace_Manager>();
+    }
+	
+	// Update is called once per frame
+	void Update () {
+	
+        if(turtleFinished || reachFinish)
+        {
+            //race over
+            faceEast();
+        }
+        else
+        {
+            if(transform.position.x >= finishLine.transform.position.x)
+            {
+                src_Turte.gameOver = true;
+                reachFinish = true;
+                Debug.Log("Rabbit finished");
+                src_Manager.winner("Rabbit");
+            }
+        }    	
+	}
 
-        //other
-        exclaPoint.SetActive(false);
-        currentDir = Direction.West;
-        faceWest();
+    /*
+  * @param none
+  * @returns null
+  * @desc Spawns on the left of the scren
+  * @status Working
+  */
+    public void spawnPosition()
+    {
+        Vector3 dirtpos = Camera.main.WorldToViewportPoint(dirtPath.transform.position);
+        transform.position = Camera.main.ViewportToWorldPoint(new Vector3(.25f, dirtpos.y, dirtpos.z));
     }
 
-    // Update is called once per frame
-    void Update()
+
+    public void run()
     {
-        GetComponent<SpriteRenderer>().sortingOrder = Mathf.RoundToInt(transform.position.y * 100f) * -1;
+        toRunEast();
+        StartCoroutine(Move(transform, new Vector3(finishLine.transform.position.x, transform.position.y, transform.position.z)));
     }
 
 
     /*
-    * @param void
-    * @returns void
-    * @desc Logic for controlling commentary for this NPC
-    * @status Not Complete
-    * @interface scrI_NPC
+    * @param Transform
+    * @returns null/0
+    * @desc Moves NPC via Lerp/Time.deltaTime
+    * @status Working
     */
-    public void engageCommentary()
+    public IEnumerator Move(Transform entity, Vector3 endPos)
     {
-        
-    }
+        Vector3 startPos = entity.position;
+        float t = 0;
 
-    /*
-    * @author Braxton Lancial
-    * @param Direction direction the engager (callee) is facing
-    * @return void
-    * @desc Forces the NPC to look at the engager (likely the player)
-    * @interface scrI_NPC
-    * @status Untested in this script
-    */
-    public void faceDirection(Direction dirEngagerIsFacing)
-    {
-        Direction toFace = Direction.North;
-
-        switch (dirEngagerIsFacing)
+        while (t < 1f && (!turtleFinished))
         {
-            case Direction.North:
-                toFace = Direction.South;
-                break;
-            case Direction.South:
-                toFace = Direction.North;
-                break;
-            case Direction.East:
-                toFace = Direction.West;
-                break;
-            case Direction.West:
-                toFace = Direction.East;
-                break;
+            t += Time.deltaTime * walkSpeed;
+            entity.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
         }
 
-        switch (toFace)
-        {
-            case Direction.North:
-                faceNorth();
-                break;
-            case Direction.South:
-                faceSouth();
-                break;
-            case Direction.East:
-                faceEast();
-                break;
-            case Direction.West:
-                faceWest();
-                break;
-        }
+        reachFinish = true;
+
+        yield return 0;
     }
+
 
     /*
     * @param void
@@ -115,7 +107,6 @@ public class scrRabbit : MonoBehaviour, scrI_NPC {
         animator.SetBool("toRunEast", false);
         animator.SetBool("toRunSouth", false);
         animator.SetBool("toRunWest", false);
-        currentDir = Direction.East;
     }
 
     /*
@@ -136,7 +127,6 @@ public class scrRabbit : MonoBehaviour, scrI_NPC {
         animator.SetBool("toRunEast", false);
         animator.SetBool("toRunSouth", false);
         animator.SetBool("toRunWest", false);
-        currentDir = Direction.North;
     }
 
     /*
@@ -157,7 +147,6 @@ public class scrRabbit : MonoBehaviour, scrI_NPC {
         animator.SetBool("toRunEast", false);
         animator.SetBool("toRunSouth", false);
         animator.SetBool("toRunWest", false);
-        currentDir = Direction.South;
     }
 
     /*
@@ -178,42 +167,6 @@ public class scrRabbit : MonoBehaviour, scrI_NPC {
         animator.SetBool("toRunEast", false);
         animator.SetBool("toRunSouth", false);
         animator.SetBool("toRunWest", false);
-        currentDir = Direction.West;
-    }
-
-
-    public bool lineOfSight_Player(Direction dir)
-    {
-        throw new NotImplementedException();
-    }
-
-    /*
-    * @param void
-    * @returns void
-    * @desc Plays additional commentary
-    * @status Not Complete
-    * @interface scrI_NPC
-    */
-    public void playAdditionalCommentary()
-    {
-        throw new NotImplementedException();
-    }
-
-    /*
-    * @param void
-    * @returns void
-    * @desc Plays the first commentary
-    * @status Not Complete
-    * @interface scrI_NPC
-    */
-    public void playFirstCommentary()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void spotted()
-    {
-        throw new NotImplementedException();
     }
 
     /*
@@ -297,77 +250,5 @@ public class scrRabbit : MonoBehaviour, scrI_NPC {
         animator.SetBool("toRunSouth", false);
         animator.SetBool("toRunEast", false);
         animator.SetBool("toRunWest", true);
-    }
-
-    public void walkToPlayer(Direction dir)
-    {
-        throw new NotImplementedException();
-    }
-
-    /*
-    * @param Transform
-    * @returns null/0
-    * @desc Moves NPC via Lerp/Time.deltaTime
-    * @status Working
-    */
-    public IEnumerator Move(Transform entity, Vector3 endPos)
-    {
-        isMoving = true;
-        Vector3 startPos = entity.position;
-        t = 0;
-
-        while (t < 1f)
-        {
-            t += Time.deltaTime * walkSpeed;
-            entity.position = Vector3.Lerp(startPos, endPos, t);
-            yield return null;
-        }
-
-        switch (currentDir)
-        {
-            case Direction.North:
-                faceNorth();
-                break;
-            case Direction.West:
-                faceWest();
-                break;
-            case Direction.South:
-                faceSouth();
-                break;
-            case Direction.East:
-                faceEast();
-                break;
-        }
-
-        isMoving = false;
-        hasAlreadyWalkedToDestination = true;
-        yield return 0;
-    }
-
-   /*
-   * @param Vector3 destination
-   * @returns null/0
-   * @desc Moves NPC to a spot using the Move function, and animates accordingly
-   * @status Working
-   */
-    public void walkToSpot(Vector3 dest, Direction dir)
-    {
-        switch (dir)
-        {
-            case Direction.North:
-                toRunNorth();
-                break;
-            case Direction.East:
-                toRunEast();
-                break;
-            case Direction.South:
-                toRunSouth();
-                break;
-            case Direction.West:
-                toRunWest();
-                break;
-        }
-
-        StartCoroutine(Move(transform, dest));
     }
 }
